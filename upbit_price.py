@@ -1,29 +1,82 @@
 import urllib.request, json
-from env import Upbit_ETH_daily_url, SLACK_BOT_TOKEN, bot_test_channel
-from urllib.request import Request, urlopen
 import time
 import datetime
 import schedule
+
+from env import UPBIT_URL, SLACK_BOT_TOKEN, SLACK_CHANNEL
+from urllib.request import Request, urlopen
 from slackclient import SlackClient
 
+slack_client = SlackClient(SLACK_BOT_TOKEN)
+
+def get_message_attachment(symbol, name):
+	REQUEST_URL = UPBIT_URL + '/days/?code=CRIX.UPBIT.KRW-' + symbol + '&count=10'
+
+	response = Request(REQUEST_URL, headers={'User-Agent': 'Mozilla/5.0'})
+	data = json.loads(urlopen(response).read())
+
+	yesterday = data[1]
+	
+	high_price = yesterday.get('highPrice')
+	low_price = yesterday.get('lowPrice')
+	price = yesterday.get('tradePrice')
+	time = yesterday.get('timestamp') / 1000
+	change_status = yesterday.get('change')
+	change_rate = round(yesterday.get('changeRate') * 100, 1)
+
+	change = '변화 없음'
+	state = '#2b2b2b'
+
+	if change_status == 'RISE':
+		change = str(change_rate) + '% 상승'
+		state = '#ff3434'
+	elif change_status == 'FALL':
+		change = str(change_rate) + '% 하락'
+		state = '#115dcb'
+
+	high_price_field = {
+		'title': '고가',
+		'value': '%.1f 원' % ( high_price ),
+		'short': True,
+	}
+
+	low_price_field = {
+		'title': '저가',
+		'value': '%.1f 원' % ( low_price, ),
+		'short': True,
+	}
+
+	average_price_field = {
+		'title': '평균가',
+		'value': '%.1f 원' % ( (high_price + low_price) / 2 ),
+	}
+
+	attachment = {
+		'title': name,
+		'title_link': 'https://upbit.com/exchange?code=CRIX.UPBIT.KRW-' + symbol,
+		'text': '1%s 당 %.1f 원 (전일대비 %s)' % (symbol, price, change ),
+		'thumb_url': 'https://static.upbit.com/logos/' + symbol + '.png',
+		'fallback': symbol + '가격 보기 (평균가/고가/시가)',
+		'ts': time,
+		'color': state,
+		'footer': 'Upbit API',
+		'fields': [high_price_field, low_price_field, average_price_field]
+	}
+
+	return attachment
 
 def send_price_message():
-	slack_token = SLACK_BOT_TOKEN
-	response = Request(Upbit_ETH_daily_url, headers={'User-Agent': 'Mozilla/5.0'})
-	data = json.loads(urlopen(response).read())
-	sc = SlackClient(slack_token)
-	yesterday_ETH_price = data[1]
-	date = yesterday_ETH_price.get('candleDateTime')[:10]
-	highPrice = yesterday_ETH_price.get('highPrice')
-	lowPrice = yesterday_ETH_price.get('lowPrice')
-	averagePrice = (highPrice + lowPrice) / 2
-	won = 10000000 / averagePrice
-	won = round(won, 3)
-	show_price = str(date) + ' 1ETH = ' + str(averagePrice) + ' 1천만원당 ' + str(won) + 'ETH' + ' 기준 - 저:' + str(lowPrice) + ' 고: ' + str(highPrice) + ' (업비트)' 
-	print(show_price)
-	sc.api_call("chat.postMessage", channel=bot_test_channel, text=show_price)
+	ETH = get_message_attachment('ETH', '이더리움')
+	# EOS = get_message_attachment('EOS', '이오스')
 
-	
+	# Sends the response back to the channel
+	slack_client.api_call(
+		"chat.postMessage",
+		channel=SLACK_CHANNEL,
+		attachments=[ETH]
+	)
+
+send_price_message()
 schedule.every().day.at("10:00").do(send_price_message)
 
 while True:

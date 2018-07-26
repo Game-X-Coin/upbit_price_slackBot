@@ -8,9 +8,11 @@ from env import UPBIT_URL
 from urllib.request import Request, urlopen
 from slackclient import SlackClient
 
-slack_bot_token = os.environ.get('SLACK_BOT_TOKEN')
-slack_channel = os.environ.get('SLACK_CHANNEL')
+slack_bot_token = os.environ['SLACK_BOT_TOKEN']
+slack_channel = os.environ['SLACK_CHANNEL']
 slack_client = SlackClient(slack_bot_token)
+
+print(slack_bot_token, slack_channel)
 
 def get_message_attachment(symbol, name):
 	REQUEST_URL = UPBIT_URL + '/days/?code=CRIX.UPBIT.KRW-' + symbol + '&count=10'
@@ -71,6 +73,8 @@ def get_message_attachment(symbol, name):
 def send_price_message():
 	ETH = get_message_attachment('ETH', '이더리움')
 	# EOS = get_message_attachment('EOS', '이오스')
+
+	print(ETH)
 
 	# Sends the response back to the channel
 	slack_client.api_call(

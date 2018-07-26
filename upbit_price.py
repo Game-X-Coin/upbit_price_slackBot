@@ -2,12 +2,15 @@ import urllib.request, json
 import time
 import datetime
 import schedule
+import os
 
-from env import UPBIT_URL, SLACK_BOT_TOKEN, SLACK_CHANNEL
+from env import UPBIT_URL
 from urllib.request import Request, urlopen
 from slackclient import SlackClient
 
-slack_client = SlackClient(SLACK_BOT_TOKEN)
+slack_bot_token = os.environ.get('SLACK_BOT_TOKEN')
+slack_channel = os.environ.get('SLACK_CHANNEL')
+slack_client = SlackClient(slack_bot_token)
 
 def get_message_attachment(symbol, name):
 	REQUEST_URL = UPBIT_URL + '/days/?code=CRIX.UPBIT.KRW-' + symbol + '&count=10'
@@ -72,7 +75,7 @@ def send_price_message():
 	# Sends the response back to the channel
 	slack_client.api_call(
 		"chat.postMessage",
-		channel=SLACK_CHANNEL,
+		channel=slack_channel,
 		attachments=[ETH]
 	)
 

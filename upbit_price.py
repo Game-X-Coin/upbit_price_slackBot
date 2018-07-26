@@ -8,11 +8,11 @@ from env import UPBIT_URL
 from urllib.request import Request, urlopen
 from slackclient import SlackClient
 
+print(os.environ)
+
 slack_bot_token = os.environ['SLACK_BOT_TOKEN']
 slack_channel = os.environ['SLACK_CHANNEL']
 slack_client = SlackClient(slack_bot_token)
-
-print(slack_bot_token, slack_channel)
 
 def get_message_attachment(symbol, name):
 	REQUEST_URL = UPBIT_URL + '/days/?code=CRIX.UPBIT.KRW-' + symbol + '&count=10'

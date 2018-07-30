@@ -83,7 +83,6 @@ def send_price_message():
 		attachments=[ETH]
 	)
 
-send_price_message()
 schedule.every().day.at("10:00").do(send_price_message)
 
 while True:
